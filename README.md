@@ -1,6 +1,7 @@
 <p align="center"><a href="https://www.docker.com/" target="_blank"><img src="https://www.svgrepo.com/download/353661/docker.svg" width="400" alt="Docker Logo"></a></p>
 
 I use Windows 10, WSL 2 Ubuntu 20.04.6 LTS
+PC (AMD Ryzen 7 5800X3D, RAM32Gb)
 
 
 ## Installation via `Make`:
