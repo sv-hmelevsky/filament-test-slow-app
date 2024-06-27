@@ -1,0 +1,84 @@
+services:
+  nginx:
+    container_name: admin-nginx
+    image: nginx
+    ports:
+      - "8000:80"
+      - "8443:8443"
+    tty: true
+    restart: unless-stopped
+    volumes:
+      - ./admin-service/app:/var/www/admin-service
+      - ./docker/server/nginx/conf.d:/etc/nginx/conf.d/
+    depends_on:
+      - php
+      - db
+    networks:
+      - mynetwork
+
+  php:
+    container_name: admin-php8.2-fpm
+    image: php:8.2-fpm
+    build:
+      context: .
+      dockerfile: ./docker/server/Dockerfile
+    working_dir: /var/www
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: fpm
+      SERVICE_TAGS: dev
+    volumes:
+      - ./admin-service/app:/var/www/admin-service
+      - ./docker/server/php:/etc/php/8.2/fpm/
+    depends_on:
+      - db
+    networks:
+      - mynetwork
+
+  db:
+    container_name: admin-postgresql
+    image: 'postgres:latest'
+    networks:
+      mynetwork:
+        aliases:
+          - postgresql
+          - localhost
+    hostname: db
+    expose:
+      - "5434" # Publishes 5433 to other containers but NOT to host machine
+    ports:
+      - "5434:5434"
+    tty: true
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./docker/server/db/pgsql:/var/lib/postgresql/atb
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: -p 5434
+
+  redis:
+    container_name: admin-redis
+    image: redis
+    ports:
+      - "6381:6379"
+    networks:
+      - mynetwork
+    volumes:
+      - ./docker/server/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+
+networks:
+  mynetwork:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres-data:
+    external: true
